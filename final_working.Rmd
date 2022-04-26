@@ -1,0 +1,97 @@
+---
+title: "final_working"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r libraries}
+library(tidyverse)     
+library(lubridate)     
+library(ggthemes)
+library(readr)
+library(maps)         
+library(ggmap)
+theme_set(theme_minimal()) 
+```
+
+```{r}
+coffee_ratings <- read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-07-07/coffee_ratings.csv')
+tea_production <- read_csv("Top 15 Tea Producing Countries 1961 - 2018.csv")
+```
+
+```{r}
+world_graph <- map_data("world")
+
+coffee_ratings %>% 
+  mutate(country_of_origin = ifelse(country_of_origin == "United States", "USA", country_of_origin)) %>% 
+  mutate(country_of_origin = ifelse(country_of_origin == "United States (Hawaii)", "USA", country_of_origin)) %>% 
+    mutate(country_of_origin = ifelse(country_of_origin == "	
+United States (Puerto Rico)","Puerto Rico", country_of_origin)) %>%
+   mutate(country_of_origin = ifelse(country_of_origin == "Tanzania, United Republic Of", "Tanzania", country_of_origin)) %>%
+  group_by(country_of_origin) %>% 
+  summarise(country_mean_meter=mean(altitude_mean_meters)) %>% 
+  
+  ggplot() +
+  geom_map(map = world_graph,
+           aes(map_id = country_of_origin,
+               fill = country_mean_meter)) +
+  viridis::scale_fill_viridis()+
+  expand_limits(x = world_graph$long, y = world_graph$lat)+
+  theme_map()
+```
+
+```{r}
+  coffee_small<-coffee_ratings %>%
+    count(country_of_origin = factor(country_of_origin)) %>% 
+    mutate(pct = prop.table(n)) %>%
+    arrange(-pct) %>% 
+    tibble()
+
+  ggplot(
+  coffee_small %>% filter(country_of_origin != "NA"),
+  mapping = aes(
+    x = reorder(country_of_origin, n),
+    y = pct,  
+    label = scales::percent(pct)
+  )
+) +
+    theme_fivethirtyeight() +
+  geom_bar(stat = "identity", fill="#a0583c") +
+      geom_text(position = position_dodge(width = 0.9),
+            hjust = -0.05,
+            size = 2.5) +
+  labs(title= "Proportion of Coffee From Each Country of Origin",
+       x = NULL,
+       y = NULL) +
+    scale_y_continuous(labels = scales::percent) + 
+     theme(plot.title.position = "plot") +
+  coord_flip()
+```
+
+```{r}
+coffee_ratings %>%
+  mutate(
+    country_of_origin  = country_of_origin %>%
+      fct_explicit_na() %>%
+      fct_lump(n = 10) %>%
+      fct_reorder(total_cup_points)
+  ) %>%
+  ggplot(aes(y = country_of_origin, x = total_cup_points)) +
+  theme_fivethirtyeight()+
+  geom_boxplot() +
+  labs(y = NULL)
+
+```
+
+
+```{r}
+coffee_ratings %>% 
+ggplot(aes(x = total_cup_points)) +
+  geom_boxplot() +
+    geom_jitter(aes(y=""),color = "#a0583c",
+              alpha = 0.3, height = 0.3, width = 0)+
+  labs(title="Range of Cup Points", y=NULL, x=NULL)
+```
