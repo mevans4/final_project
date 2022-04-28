@@ -1,49 +1,75 @@
 ---
-title: "final_working"
-output: html_document
+title: "What Goes Into Making Great Coffee?"
+author: "Kate Nozal and Mikaely Evans"
+date: "04/29/2022"
+output: 
+  html_document:
+    theme: paper
+    toc: true
+    toc_float: true
+    code_download: true
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, error=TRUE, message=FALSE, warning=FALSE)
 ```
 
-```{r libraries}
+```{r libraries, echo=FALSE}
 library(tidyverse)     
 library(lubridate)     
 library(ggthemes)
 library(readr)
 library(maps)         
 library(ggmap)
-theme_set(theme_minimal()) 
 ```
 
-```{r}
+```{r, echo=FALSE}
 coffee_ratings <- read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-07-07/coffee_ratings.csv')
-tea_production <- read_csv("Top 15 Tea Producing Countries 1961 - 2018.csv")
 ```
 
-```{r}
-world_graph <- map_data("world")
 
+All across the world, a hot cup of coffee is a morning staple. But what makes coffee so good? Coffee is a science which is studied by analyzing the chemistry involved in the growing, roasting, and brewing processes. The coffee belt is a region across the equator that has the perfect longitude for the prime coffee growing climate. Location and elevation play a very important role in developing the elements that create the different tasting notes of coffee. This article analyzes the most popular coffee growing countries of the world to determine what makes the perfect cup of joe. 
+
+# Species
+
+The first step to analyzing coffee is to understand the differences in the two species of coffee. Arabica beans are considered to be the better coffee bean because they have a more smooth and sweet taste. They are grown at higher elevations than Robusta beans and have a lower caffeine concentration. Robusta beans have a lower quality taste and are more commonly used for espresso roasts. The graph below shows a comparison between average total cup points and coffee bean species. Our findings show that the Arabica coffee beans are more likely to have a higher average total cup point score.
+
+
+```{r}
 coffee_ratings %>% 
-  mutate(country_of_origin = ifelse(country_of_origin == "United States", "USA", country_of_origin)) %>% 
-  mutate(country_of_origin = ifelse(country_of_origin == "United States (Hawaii)", "USA", country_of_origin)) %>% 
-    mutate(country_of_origin = ifelse(country_of_origin == "	
-United States (Puerto Rico)","Puerto Rico", country_of_origin)) %>%
-   mutate(country_of_origin = ifelse(country_of_origin == "Tanzania, United Republic Of", "Tanzania", country_of_origin)) %>%
-  group_by(country_of_origin) %>% 
-  summarise(country_mean_meter=mean(altitude_mean_meters)) %>% 
-  
+  group_by(species) %>% 
+  summarize(avg_total_cup_points = mean(total_cup_points)) %>% 
   ggplot() +
-  geom_map(map = world_graph,
-           aes(map_id = country_of_origin,
-               fill = country_mean_meter)) +
-  viridis::scale_fill_viridis()+
-  expand_limits(x = world_graph$long, y = world_graph$lat)+
-  theme_map()
+    geom_col(aes(y = avg_total_cup_points, x = species, fill = species)) +
+    labs(x = "Total Cup Points", y = "Species") +
+    theme(legend.position = "none") +
+  scale_fill_brewer(palette = "BrBG",
+                      aesthetics = "fill")
 ```
 
+
 ```{r}
+
+```
+
+# Variety
+```{r, echo=FALSE}
+coffee_ratings %>%
+  mutate(variety=fct_reorder(variety, total_cup_points)) %>% 
+
+ ggplot(aes(y =variety, x = total_cup_points)) +
+  geom_boxplot(fill="#a0583c") +
+  theme_fivethirtyeight()+
+  labs(y = NULL, title = "Cup Points for All Varieties")+
+   theme(plot.title.position = "plot")
+```
+
+# Country
+There are many different coffee producing countries across different continents and varying climates. Brazil was the top coffee producing country in 2021 according to Farrer’s Coffee, but in our chosen dataset Mexico had the most entries. Colombia and Guatemala have similar shares of the dataset at number two and three.
+
+
+
+```{r, echo=FALSE}
   coffee_small<-coffee_ratings %>%
     count(country_of_origin = factor(country_of_origin)) %>% 
     mutate(pct = prop.table(n)) %>%
@@ -71,7 +97,14 @@ United States (Puerto Rico)","Puerto Rico", country_of_origin)) %>%
   coord_flip()
 ```
 
-```{r}
+
+
+
+Now we shift to looking at cup points, points given by experts as a cumulative representation of categories such as aroma, flavor, acidity and several more. The closer the score to 100 the better the coffee. Below are the distribution of cup points for the top ten producing countries. Other Countries had high scoring cup points such as Papua New Guniea, but were excluded from this graphic due to only having one entry in the dataset. Ethiopia produces the highest scoring coffee by cup points, but other are close behind by a range of just a few points at most. 
+
+
+
+```{r, echo=FALSE}
 coffee_ratings %>%
   mutate(
     country_of_origin  = country_of_origin %>%
@@ -81,17 +114,139 @@ coffee_ratings %>%
   ) %>%
   ggplot(aes(y = country_of_origin, x = total_cup_points)) +
   theme_fivethirtyeight()+
-  geom_boxplot() +
-  labs(y = NULL)
+  geom_boxplot(fill="#a0583c") +
+  labs(y = NULL, title= "Cup Points For The Top 10 Producing Countries") +
+   theme(plot.title.position = "plot")
 
 ```
 
-
 ```{r}
 coffee_ratings %>% 
+  group_by(country_of_origin) %>%
+  filter(country_of_origin != "NA") %>% 
+  select(-country_of_origin) %>%  
+  summarize(avg_total_cup_points = mean(total_cup_points)) %>%
+  ggplot() +
+    geom_col(aes(x = avg_total_cup_points,
+                 y = fct_reorder(country_of_origin, avg_total_cup_points)),
+                 fill = "#a0583c") +
+    labs(x = "Average Total Cup Points", y = "Country of Origin") +
+    theme(legend.position = "none")
+```
+
+
+
+
+```{r, echo=FALSE}
+coffee_ratings %>% 
 ggplot(aes(x = total_cup_points)) +
+theme_fivethirtyeight() +
   geom_boxplot() +
     geom_jitter(aes(y=""),color = "#a0583c",
               alpha = 0.3, height = 0.3, width = 0)+
-  labs(title="Range of Cup Points", y=NULL, x=NULL)
+  labs(title="Range of All Cup Points Scores", y=NULL, x=NULL) +
+   theme(plot.title.position = "plot")
+```
+
+
+# Ethiopia
+## Region
+
+```{r, echo=FALSE}
+coffee_ratings %>%
+  filter(country_of_origin=="Ethiopia") %>% 
+  mutate(region = ifelse(region == "kefa zone, gimbo distict, at a place called woka araba, south west ethiopia.", "south west", region)) %>% 
+  count(region) %>%
+  mutate(region = fct_reorder(region, n)) %>%
+
+ ggplot(aes(y =region, x = n)) +
+  geom_col(fill="#a0583c") +
+  theme_fivethirtyeight()+
+  labs(y = NULL, title = "Production Entries by Region in Ethiopia")+ 
+   theme(plot.title.position = "plot")
+```
+
+```{r}
+coffee_ratings %>% 
+  filter(country_of_origin == "Ethiopia") %>% 
+  group_by(region) %>% 
+  filter(region != "kelem welega") %>% 
+  select(-region) %>% 
+  filter(region != "kefa zone, gimbo distict, at a place called woka araba, south west ethiopia.") %>% 
+  select(-region) %>% 
+  filter(region != "addis ababa") %>% 
+  select(-region) %>% 
+  filter(region != "yirgacheffe") %>% 
+  select(-region) %>% 
+  filter(region != "sidamo") %>% 
+  select(-region) %>% 
+  filter(region != "limu") %>% 
+  select(-region) %>% 
+  
+  summarize(new_altitude_mean_meters = mean(altitude_mean_meters)) %>%
+  mutate(new_altitude_mean_meters = ifelse(region == "oromia", 1722.5835, new_altitude_mean_meters)) %>% 
+  
+  ggplot() +
+  geom_point(aes(x = new_altitude_mean_meters,
+               y = fct_reorder(str_to_title(fct_recode(region, "south west ethiopia" = "kefa zone, gimbo distict, at a place called woka araba, south west ethiopia.")), new_altitude_mean_meters)),
+               color = "#a0583c")+
+  labs(x = "Region",
+       y = "Altitude Mean Meters")
+```
+
+
+```{r, echo=FALSE}
+coffee_ratings %>%
+  filter(country_of_origin=="Ethiopia") %>% 
+  mutate(region = ifelse(region == "kefa zone, gimbo distict, at a place called woka araba, south west ethiopia.", "south west", region)) %>% 
+  mutate(region=fct_reorder(region, total_cup_points)) %>% 
+
+ ggplot(aes(y =region, x = total_cup_points)) +
+  geom_boxplot(fill="#a0583c") +
+  theme_fivethirtyeight()+
+  labs(y = NULL, title = "Cup Points by Region in Ethiopia")+
+   theme(plot.title.position = "plot") 
+```
+
+## Variety
+```{r, echo=FALSE}
+coffee_ratings %>%
+  filter(country_of_origin=="Ethiopia") %>% 
+  mutate(variety=fct_reorder(variety, total_cup_points)) %>% 
+
+ ggplot(aes(y =variety, x = total_cup_points)) +
+  geom_boxplot(fill="#a0583c") +
+  theme_fivethirtyeight()+
+  labs(y = NULL, title = "Cup Points by Variety in Ethiopia")+
+   theme(plot.title.position = "plot") 
+```
+
+
+
+
+
+
+
+Like any good data science project, we found when trying to develop our question that some variables were not going to work well for us and one of those was altitude. In the dataset each altitude is recorded as a range and some in meters, others in feet. There were many missing values and essentially no uniformity.Even with altitude_mean_meters which cleaned it up a little bit, we found the graph we made would not be super useful going forward unless we were going to put in a ton of time and help, wouldn't be that useful for our final project. We wanted to include it because although not contributing to our overall all story, it served us well in helping redirect our project.
+
+```{r, echo=FALSE}
+world_graph <- map_data("world")
+
+coffee_ratings %>% 
+  mutate(country_of_origin = ifelse(country_of_origin == "United States", "USA", country_of_origin)) %>% 
+  mutate(country_of_origin = ifelse(country_of_origin == "United States (Hawaii)", "USA", country_of_origin)) %>% 
+    mutate(country_of_origin = ifelse(country_of_origin == "	
+United States (Puerto Rico)","Puerto Rico", country_of_origin)) %>%
+   mutate(country_of_origin = ifelse(country_of_origin == "Tanzania, United Republic Of", "Tanzania", country_of_origin)) %>%
+  group_by(country_of_origin) %>% 
+  summarise(country_mean_meter=mean(altitude_mean_meters, na.rm=TRUE)) %>% 
+ full_join(world_graph, by = c("country_of_origin"= "region")) %>% 
+  
+  ggplot() +
+  geom_map(map = world_graph,
+           aes(map_id = country_of_origin,
+               fill = country_mean_meter)) +
+  viridis::scale_fill_viridis()+
+  expand_limits(x = world_graph$long, y = world_graph$lat)+
+  theme_map()
 ```
