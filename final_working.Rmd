@@ -35,16 +35,15 @@ All across the world, a hot cup of coffee is a morning staple. But what makes co
 The first step to analyzing coffee is to understand the differences in the two species of coffee. Arabica beans are considered to be the better coffee bean because they have a more smooth and sweet taste. They are grown at higher elevations than Robusta beans and have a lower caffeine concentration. Robusta beans have a lower quality taste and are more commonly used for espresso roasts. The graph below shows a comparison between average total cup points and coffee bean species. Our findings show that the Arabica coffee beans are more likely to have a higher average total cup point score.
 
 
-```{r}
+```{r, echo=FALSE}
 coffee_ratings %>% 
   group_by(species) %>% 
-  summarize(avg_total_cup_points = mean(total_cup_points)) %>% 
   ggplot() +
-    geom_col(aes(y = avg_total_cup_points, x = species, fill = species)) +
+    theme_fivethirtyeight()+
+    geom_boxplot(aes(y = total_cup_points, x = species, fill = species), fill="#a0583c", outlier.shape = NA)  +
     labs(x = "Total Cup Points", y = "Species") +
-    theme(legend.position = "none") +
-  scale_fill_brewer(palette = "BrBG",
-                      aesthetics = "fill")
+    scale_y_continuous(limits=c(75,85))+
+    theme(legend.position = "none")
 ```
 
 
@@ -120,16 +119,17 @@ coffee_ratings %>%
 
 ```
 
-```{r}
+```{r, echo=FALSE}
 coffee_ratings %>% 
   group_by(country_of_origin) %>%
   filter(country_of_origin != "NA") %>% 
   select(-country_of_origin) %>%  
   summarize(avg_total_cup_points = mean(total_cup_points)) %>%
   ggplot() +
-    geom_col(aes(x = avg_total_cup_points,
+    theme_fivethirtyeight()+
+    geom_point(aes(x = avg_total_cup_points,
                  y = fct_reorder(country_of_origin, avg_total_cup_points)),
-                 fill = "#a0583c") +
+                 color = "#a0583c") +
     labs(x = "Average Total Cup Points", y = "Country of Origin") +
     theme(legend.position = "none")
 ```
@@ -166,7 +166,7 @@ coffee_ratings %>%
    theme(plot.title.position = "plot")
 ```
 
-```{r}
+```{r, echo=FALSE}
 coffee_ratings %>% 
   filter(country_of_origin == "Ethiopia") %>% 
   group_by(region) %>% 
@@ -187,6 +187,7 @@ coffee_ratings %>%
   mutate(new_altitude_mean_meters = ifelse(region == "oromia", 1722.5835, new_altitude_mean_meters)) %>% 
   
   ggplot() +
+    theme_fivethirtyeight()+
   geom_point(aes(x = new_altitude_mean_meters,
                y = fct_reorder(str_to_title(fct_recode(region, "south west ethiopia" = "kefa zone, gimbo distict, at a place called woka araba, south west ethiopia.")), new_altitude_mean_meters)),
                color = "#a0583c")+
